@@ -1,11 +1,13 @@
 package lab4;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Proxy
 {
     private ReentrantLock mutex = new ReentrantLock();
-    private int readerCount, writerCount;
+    private static AtomicInteger readerCount = new AtomicInteger(0);
+    private static AtomicInteger writerCount = new AtomicInteger(0);
 
     private static Proxy instance = null;
 
@@ -24,32 +26,32 @@ public class Proxy
 
     public synchronized void preRead(int pid)
     {
-        while (writerCount > 0) {
+        while (writerCount.get() > 0) {
             Wait();
         }
-        readerCount++;
+        readerCount.incrementAndGet();
     }
 
     public synchronized void postRead(int pid)
     {
-        readerCount--;
-        if (readerCount == 0) {
+        readerCount.decrementAndGet();
+        if (readerCount.get() == 0) {
             notify();
         }
     }
 
     public synchronized void preWrite(int pid)
     {
-        while (readerCount > 0 || writerCount > 0) {
+        while (readerCount.get() > 0 || writerCount.get() > 0) {
             Wait();
         }
-        writerCount++;
+        writerCount.incrementAndGet();
     }
 
     public synchronized void postWrite(int pid)
     {
-        writerCount--;
-        if (writerCount == 0) {
+        writerCount.decrementAndGet();
+        if (writerCount.get() == 0) {
             notifyAll();
         }
     }
