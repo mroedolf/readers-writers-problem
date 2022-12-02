@@ -5,6 +5,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class Proxy
 {
     private ReentrantLock mutex = new ReentrantLock();
+    private int readerCount, writerCount;
 
     private static Proxy instance = null;
 
@@ -21,35 +22,41 @@ public class Proxy
         return instance;
     }
 
-    public void preRead(int pid)
+    public synchronized void preRead(int pid)
     {
-        try {
-            mutex.lock();
-        } finally {
-
+        while (writerCount > 0) {
+            Wait();
         }
-        // TODO: synchronization before read goes here
+        readerCount++;
     }
 
-    public void postRead(int pid)
+    public synchronized void postRead(int pid)
     {
-        mutex.unlock();
-        // TODO: synchronization after read goes here
-    }
-
-    public void preWrite(int pid)
-    {
-        try {
-            mutex.lock();
-        } finally {
-
+        readerCount--;
+        if (readerCount == 0) {
+            notify();
         }
-        // TODO: synchronization before write goes here
     }
 
-    public void postWrite(int pid)
+    public synchronized void preWrite(int pid)
     {
-        mutex.unlock();
-        // TODO: synchronization after write goes here
+        while (readerCount > 0 || writerCount > 0) {
+            Wait();
+        }
+        writerCount++;
+    }
+
+    public synchronized void postWrite(int pid)
+    {
+        writerCount--;
+        if (writerCount == 0) {
+            notifyAll();
+        }
+    }
+
+    private void Wait() {
+        try {
+            wait();
+        } catch (InterruptedException e){};
     }
 }
