@@ -1,20 +1,23 @@
 package lab4;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Proxy
 {
-    private ReentrantLock mutex = new ReentrantLock();
-    private static AtomicInteger readerCount = new AtomicInteger(0);
-    private static AtomicInteger writerCount = new AtomicInteger(0);
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+
+    private final Lock readLock = lock.readLock();
+    private final Lock writeLock = lock.writeLock();
 
     private static Proxy instance = null;
 
 
     private Proxy()
     {
-
     }
 
     public static synchronized Proxy getInstance()
@@ -24,41 +27,31 @@ public class Proxy
         return instance;
     }
 
-    public synchronized void preRead(int pid)
+    public void preRead(int pid)
     {
-        while (writerCount.get() > 0) {
-            Wait();
-        }
-        readerCount.incrementAndGet();
-    }
-
-    public synchronized void postRead(int pid)
-    {
-        readerCount.decrementAndGet();
-        if (readerCount.get() == 0) {
-            notify();
-        }
-    }
-
-    public synchronized void preWrite(int pid)
-    {
-        while (readerCount.get() > 0 || writerCount.get() > 0) {
-            Wait();
-        }
-        writerCount.incrementAndGet();
-    }
-
-    public synchronized void postWrite(int pid)
-    {
-        writerCount.decrementAndGet();
-        if (writerCount.get() == 0) {
-            notifyAll();
-        }
-    }
-
-    private void Wait() {
         try {
-            wait();
-        } catch (InterruptedException e){};
+            readLock.lock();
+        } finally {
+
+        }
+    }
+
+    public void postRead(int pid)
+    {
+        readLock.unlock();
+    }
+
+    public void preWrite(int pid)
+    {
+        try {
+            writeLock.lock();
+        } finally {
+
+        }
+    }
+
+    public void postWrite(int pid)
+    {
+        writeLock.unlock();
     }
 }

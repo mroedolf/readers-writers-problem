@@ -35,11 +35,11 @@ public class RWConfig {
      * between WRITER_WAITING_MIN and WRITER_WAITING_MAX milliseconds. After a write operation, the writer thread will 
      * be made to sleep between WRITER_PROCESSING_MIN and WRITER_PROCESSING_MAX milliseconds.
      */
-    public static final int N_WRITERS             = 5;
-    public static final int WRITER_WAITING_MIN    = 500;
-    public static final int WRITER_WAITING_MAX    = 600;
-    public static final int WRITER_PROCESSING_MIN = 500;
-    public static final int WRITER_PROCESSING_MAX = 600;
+    public static final int N_WRITERS             = 10;
+    public static final int WRITER_WAITING_MIN    = 100;
+    public static final int WRITER_WAITING_MAX    = 200;
+    public static final int WRITER_PROCESSING_MIN = 100;
+    public static final int WRITER_PROCESSING_MAX = 150;
 
 
     public static void printConfig()
