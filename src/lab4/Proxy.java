@@ -1,5 +1,6 @@
 package lab4;
 
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -8,10 +9,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Proxy
 {
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Semaphore orderMutex = new Semaphore(1);
+    private final Semaphore accessMutex = new Semaphore(1);
+    private final Semaphore readersMutex = new Semaphore(1);
 
-    private final Lock readLock = lock.readLock();
-    private final Lock writeLock = lock.writeLock();
+    private static AtomicInteger activeReaders = new AtomicInteger(0);
 
     private static Proxy instance = null;
 
@@ -30,28 +32,31 @@ public class Proxy
     public void preRead(int pid)
     {
         try {
-            readLock.lock();
-        } finally {
+            orderMutex.acquire();
+            if (activeReaders.get() == 0) accessMutex.acquire();
+            activeReaders.getAndIncrement();
+            orderMutex.release();
 
-        }
+        } catch (InterruptedException e) {}
     }
 
     public void postRead(int pid)
     {
-        readLock.unlock();
+        activeReaders.getAndDecrement();
+        if (activeReaders.get() == 0) accessMutex.release();
     }
 
     public void preWrite(int pid)
     {
         try {
-            writeLock.lock();
-        } finally {
-
-        }
+            orderMutex.acquire();
+            accessMutex.acquire();
+            orderMutex.release();
+        } catch (InterruptedException e){};
     }
 
     public void postWrite(int pid)
     {
-        writeLock.unlock();
+        accessMutex.release();
     }
 }
